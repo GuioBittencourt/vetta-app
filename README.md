@@ -1,1 +1,1 @@
-# Vetta
+vetta-app
