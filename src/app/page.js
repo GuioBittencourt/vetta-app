@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const COLORS = {
   bg: "#F9F7F4",
@@ -13,6 +14,7 @@ const COLORS = {
 };
 
 export default function LoginPage() {
+  const router = useRouter();
   const [modo, setModo] = useState("personal");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -194,9 +196,10 @@ export default function LoginPage() {
           {modo === "personal" ? (
             <span style={{ fontSize: 12, color: COLORS.muted }}>
               Ainda não tem conta?{" "}
-              <span style={{ color: COLORS.gold, cursor: "pointer", fontWeight: 500 }}>
-                Cadastrar
-              </span>
+              <span onClick={() => router.push("/cadastro")}
+  style={{ color: COLORS.gold, cursor: "pointer", fontWeight: 500 }}>
+  Cadastrar
+</span>
             </span>
           ) : (
             <span style={{ fontSize: 12, color: COLORS.muted }}>
@@ -215,7 +218,7 @@ export default function LoginPage() {
           Plataforma exclusiva para profissionais certificados
         </div>
         <div style={{ fontSize: 10, color: COLORS.border, letterSpacing: 0.5 }}>
-          © 2026 Vetta · Todos os direitos reservados ·
+          © 2026 Vetta · Todos os direitos reservados
         </div>
       </div>
 
