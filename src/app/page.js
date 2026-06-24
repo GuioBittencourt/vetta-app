@@ -2,6 +2,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "./lib/firebase";
 
 const COLORS = {
   bg: "#F9F7F4",
@@ -11,6 +13,7 @@ const COLORS = {
   text: "#1A1A1A",
   muted: "#6B6B6B",
   border: "#E8E4DC",
+  error: "#C0392B",
 };
 
 export default function LoginPage() {
@@ -20,10 +23,30 @@ export default function LoginPage() {
   const [senha, setSenha] = useState("");
   const [cref, setCref] = useState("");
   const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState("");
 
   async function handleLogin() {
+    setErro("");
+    if (!email.trim() || !senha.trim()) {
+      setErro("Preencha e-mail e senha.");
+      return;
+    }
     setLoading(true);
-    setTimeout(() => setLoading(false), 1500);
+    try {
+      await signInWithEmailAndPassword(auth, email, senha);
+      router.push("/dashboard");
+    } catch (err) {
+      if (
+        err.code === "auth/invalid-credential" ||
+        err.code === "auth/user-not-found" ||
+        err.code === "auth/wrong-password"
+      ) {
+        setErro("E-mail ou senha incorretos.");
+      } else {
+        setErro("Erro ao entrar. Tente novamente.");
+      }
+    }
+    setLoading(false);
   }
 
   return (
@@ -72,7 +95,7 @@ export default function LoginPage() {
         boxShadow: "0 2px 20px rgba(0,0,0,0.04)",
       }}>
 
-        {/* Toggle Personal / Aluno */}
+        {/* Toggle */}
         <div style={{
           display: "flex",
           background: COLORS.bg,
@@ -81,7 +104,7 @@ export default function LoginPage() {
           marginBottom: 24,
         }}>
           {["personal", "aluno"].map((m) => (
-            <button key={m} onClick={() => setModo(m)} style={{
+            <button key={m} onClick={() => { setModo(m); setErro(""); }} style={{
               flex: 1,
               padding: "9px 0",
               borderRadius: 8,
@@ -99,53 +122,57 @@ export default function LoginPage() {
           ))}
         </div>
 
-        {/* Campos */}
-        {[
-          { label: "E-mail", value: email, set: setEmail, type: "email", placeholder: "seu@email.com" },
-          { label: "Senha", value: senha, set: setSenha, type: "password", placeholder: "••••••••" },
-        ].map(({ label, value, set, type, placeholder }) => (
-          <div key={label} style={{ marginBottom: 14 }}>
-            <label style={{
-              fontSize: 10,
-              letterSpacing: 1.5,
-              color: COLORS.muted,
-              textTransform: "uppercase",
-              display: "block",
-              marginBottom: 6,
-            }}>{label}</label>
-            <input
-              type={type}
-              value={value}
-              onChange={(e) => set(e.target.value)}
-              placeholder={placeholder}
-              style={{
-                width: "100%",
-                padding: "11px 14px",
-                border: `1px solid ${COLORS.border}`,
-                borderRadius: 10,
-                fontSize: 14,
-                color: COLORS.text,
-                background: COLORS.bg,
-                outline: "none",
-                boxSizing: "border-box",
-                transition: "border-color 0.2s",
-              }}
-              onFocus={(e) => e.target.style.borderColor = COLORS.gold}
-              onBlur={(e) => e.target.style.borderColor = COLORS.border}
-            />
-          </div>
-        ))}
+        {/* E-mail */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={{
+            fontSize: 10, letterSpacing: 1.5, color: COLORS.muted,
+            textTransform: "uppercase", display: "block", marginBottom: 6,
+          }}>E-mail</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="seu@email.com"
+            style={{
+              width: "100%", padding: "11px 14px",
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 10, fontSize: 14, color: COLORS.text,
+              background: COLORS.bg, outline: "none", boxSizing: "border-box",
+            }}
+            onFocus={(e) => e.target.style.borderColor = COLORS.gold}
+            onBlur={(e) => e.target.style.borderColor = COLORS.border}
+          />
+        </div>
 
-        {/* Campo CREF — só personal */}
+        {/* Senha */}
+        <div style={{ marginBottom: 14 }}>
+          <label style={{
+            fontSize: 10, letterSpacing: 1.5, color: COLORS.muted,
+            textTransform: "uppercase", display: "block", marginBottom: 6,
+          }}>Senha</label>
+          <input
+            type="password"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+            placeholder="••••••••"
+            style={{
+              width: "100%", padding: "11px 14px",
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 10, fontSize: 14, color: COLORS.text,
+              background: COLORS.bg, outline: "none", boxSizing: "border-box",
+            }}
+            onFocus={(e) => e.target.style.borderColor = COLORS.gold}
+            onBlur={(e) => e.target.style.borderColor = COLORS.border}
+          />
+        </div>
+
+        {/* CREF — só personal */}
         {modo === "personal" && (
           <div style={{ marginBottom: 14 }}>
             <label style={{
-              fontSize: 10,
-              letterSpacing: 1.5,
-              color: COLORS.muted,
-              textTransform: "uppercase",
-              display: "block",
-              marginBottom: 6,
+              fontSize: 10, letterSpacing: 1.5, color: COLORS.muted,
+              textTransform: "uppercase", display: "block", marginBottom: 6,
             }}>Registro CREF</label>
             <input
               type="text"
@@ -153,16 +180,10 @@ export default function LoginPage() {
               onChange={(e) => setCref(e.target.value)}
               placeholder="000000-G/SP"
               style={{
-                width: "100%",
-                padding: "11px 14px",
+                width: "100%", padding: "11px 14px",
                 border: `1px solid ${COLORS.border}`,
-                borderRadius: 10,
-                fontSize: 14,
-                color: COLORS.text,
-                background: COLORS.bg,
-                outline: "none",
-                boxSizing: "border-box",
-                transition: "border-color 0.2s",
+                borderRadius: 10, fontSize: 14, color: COLORS.text,
+                background: COLORS.bg, outline: "none", boxSizing: "border-box",
               }}
               onFocus={(e) => e.target.style.borderColor = COLORS.gold}
               onBlur={(e) => e.target.style.borderColor = COLORS.border}
@@ -170,36 +191,42 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Botão entrar */}
+        {/* Erro */}
+        {erro && (
+          <div style={{
+            background: "#fde8e8", border: "1px solid #f5c6c6",
+            borderRadius: 8, padding: "10px 14px",
+            fontSize: 13, color: COLORS.error, marginBottom: 14,
+          }}>
+            {erro}
+          </div>
+        )}
+
+        {/* Botão */}
         <button
           onClick={handleLogin}
           disabled={loading}
           style={{
-            width: "100%",
-            padding: "13px 0",
+            width: "100%", padding: "13px 0",
             background: loading ? COLORS.goldLight : COLORS.gold,
-            border: "none",
-            borderRadius: 10,
-            color: "#fff",
-            fontSize: 14,
-            fontWeight: 600,
+            border: "none", borderRadius: 10, color: "#fff",
+            fontSize: 14, fontWeight: 600,
             cursor: loading ? "default" : "pointer",
-            letterSpacing: 0.5,
-            marginTop: 8,
+            letterSpacing: 0.5, marginTop: 8,
             transition: "background 0.2s",
           }}>
           {loading ? "Entrando..." : "Entrar"}
         </button>
 
-        {/* Rodapé */}
+        {/* Rodapé card */}
         <div style={{ textAlign: "center", marginTop: 18 }}>
           {modo === "personal" ? (
             <span style={{ fontSize: 12, color: COLORS.muted }}>
               Ainda não tem conta?{" "}
               <span onClick={() => router.push("/cadastro")}
-  style={{ color: COLORS.gold, cursor: "pointer", fontWeight: 500 }}>
-  Cadastrar
-</span>
+                style={{ color: COLORS.gold, cursor: "pointer", fontWeight: 500 }}>
+                Cadastrar
+              </span>
             </span>
           ) : (
             <span style={{ fontSize: 12, color: COLORS.muted }}>
@@ -209,7 +236,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-{/* Rodapé */}
+      {/* Rodapé página */}
       <div style={{ marginTop: 32, textAlign: "center" }}>
         <div style={{ fontSize: 11, color: COLORS.muted, letterSpacing: 2, marginBottom: 6 }}>
           VETTA · Performance Intelligence
